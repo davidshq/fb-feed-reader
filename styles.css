@@ -1,0 +1,70 @@
+/* Facebook Feed Reader Styles */
+
+.fb-reader-checkmark {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  background-color: #1877f2;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  z-index: 9999;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  user-select: none;
+}
+
+.fb-reader-checkmark:hover {
+  background-color: #166fe5;
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.fb-reader-checkmark:active {
+  transform: scale(0.95);
+}
+
+/* Ensure feed items have relative positioning for proper checkmark placement */
+[data-pagelet*="FeedUnit"],
+[data-testid*="post"],
+[role="article"],
+div[data-testid="post_container"] {
+  position: relative !important;
+}
+
+/* Animation for hiding feed items */
+.fb-reader-item-hiding {
+  opacity: 0;
+  transition: opacity 0.3s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .fb-reader-checkmark {
+    width: 20px;
+    height: 20px;
+    font-size: 12px;
+    top: 8px;
+    right: 8px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .fb-reader-checkmark {
+    background-color: #42a5f5;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+  }
+  
+  .fb-reader-checkmark:hover {
+    background-color: #2196f3;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+  }
+} 

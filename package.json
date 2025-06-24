@@ -1,0 +1,31 @@
+{
+  "name": "facebook-feed-reader",
+  "version": "1.0.0",
+  "description": "A Chrome browser extension that adds checkmarks to Facebook feed items and hides them when checked",
+  "main": "content.js",
+  "scripts": {
+    "build": "echo 'No build process needed for Chrome extension'",
+    "test": "echo 'No tests specified'",
+    "icons": "echo 'Open create_icons.html in browser to generate icons'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "facebook",
+    "feed-reader",
+    "productivity",
+    "browser-extension"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/facebook-feed-reader.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/facebook-feed-reader/issues"
+  },
+  "homepage": "https://github.com/yourusername/facebook-feed-reader#readme",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+} 
