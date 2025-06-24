@@ -32,6 +32,12 @@
 }
 
 /* Ensure feed items have relative positioning for proper checkmark placement */
+/* High priority: Items with aria-posinset (most reliable) */
+[role="article"][aria-posinset] {
+  position: relative !important;
+}
+
+/* Medium priority: Traditional Facebook selectors */
 [data-pagelet*="FeedUnit"],
 [data-testid*="post"],
 [role="article"],
@@ -43,6 +49,16 @@ div[data-testid="post_container"] {
 .fb-reader-item-hiding {
   opacity: 0;
   transition: opacity 0.3s ease-out;
+}
+
+/* Handle Facebook's virtualization system */
+[data-virtualized="false"] {
+  position: relative !important;
+}
+
+/* Ensure checkmarks work with suspended content */
+.suspended {
+  position: relative !important;
 }
 
 /* Responsive adjustments */
