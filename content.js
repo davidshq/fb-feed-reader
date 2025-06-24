@@ -3,7 +3,6 @@ class FacebookFeedReader {
   constructor() {
     this.checkedItems = new Set();
     this.observer = null;
-    this.processedItems = new Set();
     this.isProcessing = false;
     this.init();
   }

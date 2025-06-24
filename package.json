@@ -5,8 +5,7 @@
   "main": "content.js",
   "scripts": {
     "build": "echo 'No build process needed for Chrome extension'",
-    "test": "echo 'No tests specified'",
-    "icons": "echo 'Open create_icons.html in browser to generate icons'"
+    "test": "echo 'No tests specified'"
   },
   "keywords": [
     "chrome-extension",

@@ -18,17 +18,13 @@ A Chrome browser extension that adds checkmarks to Facebook feed items and hides
 
 1. **Download or clone this repository** to your local machine
 
-2. **Generate the extension icons:**
-   - Open `create_icons.html` in your browser
-   - Click the download buttons to save `icon16.png`, `icon48.png`, and `icon128.png` to the extension directory
-
-3. **Load the extension in Chrome:**
+2. **Load the extension in Chrome:**
    - Open Chrome and go to `chrome://extensions/`
    - Enable "Developer mode" in the top right corner
    - Click "Load unpacked" and select the extension directory
    - The extension should now appear in your extensions list
 
-4. **Navigate to Facebook:**
+3. **Navigate to Facebook:**
    - Go to `https://www.facebook.com`
    - You should see checkmarks appear on feed items
 
@@ -65,8 +61,9 @@ fb-feed-reader/
 ├── manifest.json          # Extension configuration
 ├── content.js            # Main content script
 ├── background.js         # Background service worker
+├── popup.html           # Extension popup interface
+├── popup.js             # Popup script
 ├── styles.css            # CSS styles for checkmarks
-├── create_icons.html     # Icon generator (optional)
 ├── icon16.png           # Extension icon (16x16)
 ├── icon48.png           # Extension icon (48x48)
 ├── icon128.png          # Extension icon (128x128)
