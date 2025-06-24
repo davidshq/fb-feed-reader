@@ -2,6 +2,8 @@
 
 A Chrome browser extension that adds checkmarks to Facebook feed items and hides them when checked. Once an item has been checked, it disappears from the feed and won't show up again when you reload the page.
 
+Note: This is vibe coded using Cursor. 99% vibes. Expect code quality to be that vibing quality. :-P
+
 ## Features
 
 - ✅ Adds checkmarks to each Facebook feed item
