@@ -7,10 +7,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const showGroupsCheckbox = document.getElementById('showGroups');
     const showSponsoredCheckbox = document.getElementById('showSponsored');
     const filterStatusElement = document.getElementById('filterStatus');
+    
+    // Debug section elements
+    const debugSection = document.getElementById('debugSection');
+    const debugHeader = document.getElementById('debugHeader');
+    const hideShortcutsCheckbox = document.getElementById('hideShortcuts');
+    const hideBannerCheckbox = document.getElementById('hideBanner');
+    const hideComplementaryCheckbox = document.getElementById('hideComplementary');
+    const hideStoriesCheckbox = document.getElementById('hideStories');
+    const hideCreateCheckbox = document.getElementById('hideCreate');
 
     // Load the count and filter settings when popup opens
     loadCheckedCount();
     loadFilterSettings();
+    loadDebugSettings();
 
     // Clear button event
     clearButton.addEventListener('click', function() {
@@ -31,6 +41,33 @@ document.addEventListener('DOMContentLoaded', function() {
     refreshButton.addEventListener('click', function() {
         loadCheckedCount();
         loadFilterSettings();
+        loadDebugSettings();
+    });
+
+    // Debug section header click for collapsible behavior
+    debugHeader.addEventListener('click', function() {
+        debugSection.classList.toggle('collapsed');
+    });
+
+    // Debug checkbox events
+    hideShortcutsCheckbox.addEventListener('change', function() {
+        updateDebugSettings();
+    });
+
+    hideBannerCheckbox.addEventListener('change', function() {
+        updateDebugSettings();
+    });
+
+    hideComplementaryCheckbox.addEventListener('change', function() {
+        updateDebugSettings();
+    });
+
+    hideStoriesCheckbox.addEventListener('change', function() {
+        updateDebugSettings();
+    });
+
+    hideCreateCheckbox.addEventListener('change', function() {
+        updateDebugSettings();
     });
 
     // Filter checkbox events
@@ -103,6 +140,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 } else {
                     filterStatusElement.textContent += ' (Not on Facebook)';
+                }
+            });
+        });
+    }
+
+    function loadDebugSettings() {
+        chrome.storage.local.get(['debugSettings'], function(result) {
+            const defaultSettings = { hideShortcuts: false, hideBanner: false, hideComplementary: false, hideStories: false, hideCreate: false };
+            const settings = result.debugSettings || defaultSettings;
+            
+            hideShortcutsCheckbox.checked = settings.hideShortcuts;
+            hideBannerCheckbox.checked = settings.hideBanner;
+            hideComplementaryCheckbox.checked = settings.hideComplementary;
+            hideStoriesCheckbox.checked = settings.hideStories;
+            hideCreateCheckbox.checked = settings.hideCreate;
+        });
+    }
+
+    function updateDebugSettings() {
+        const debugSettings = {
+            hideShortcuts: hideShortcutsCheckbox.checked,
+            hideBanner: hideBannerCheckbox.checked,
+            hideComplementary: hideComplementaryCheckbox.checked,
+            hideStories: hideStoriesCheckbox.checked,
+            hideCreate: hideCreateCheckbox.checked
+        };
+
+        // Save to storage
+        chrome.storage.local.set({ debugSettings: debugSettings }, function() {
+            console.log('Debug settings saved:', debugSettings);
+            
+            // Notify content script to update UI elements
+            chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+                if (tabs[0] && tabs[0].url && tabs[0].url.includes('facebook.com')) {
+                    chrome.tabs.sendMessage(tabs[0].id, {
+                        action: 'updateDebugSettings',
+                        debugSettings: debugSettings
+                    }, function(response) {
+                        if (chrome.runtime.lastError) {
+                            console.log('Content script not ready, debug settings saved for next load');
+                        } else {
+                            console.log('Debug settings applied in content script');
+                        }
+                    });
                 }
             });
         });

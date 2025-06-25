@@ -9,6 +9,13 @@ class FacebookFeedReader {
       showGroups: true,
       showSponsored: true
     };
+    this.debugSettings = {
+      hideShortcuts: false,
+      hideBanner: false,
+      hideComplementary: false,
+      hideStories: false,
+      hideCreate: false
+    };
     this.init();
   }
 
@@ -20,6 +27,9 @@ class FacebookFeedReader {
     // Load filter settings
     await this.loadFilterSettings();
     
+    // Load debug settings
+    await this.loadDebugSettings();
+    
     // Clean up invalid IDs
     await this.cleanupInvalidIds();
     
@@ -30,6 +40,11 @@ class FacebookFeedReader {
     setTimeout(() => {
       this.processFeedItems();
     }, 2000);
+    
+    // Apply debug settings after a short delay
+    setTimeout(() => {
+      this.applyDebugSettings();
+    }, 3000);
   }
 
   async loadCheckedItems() {
@@ -63,6 +78,18 @@ class FacebookFeedReader {
       });
     } catch (error) {
       console.error('Error saving filter settings:', error);
+    }
+  }
+
+  async loadDebugSettings() {
+    try {
+      const result = await chrome.storage.local.get(['debugSettings']);
+      if (result.debugSettings) {
+        this.debugSettings = { ...this.debugSettings, ...result.debugSettings };
+        console.log('Facebook Feed Reader: Loaded debug settings:', this.debugSettings);
+      }
+    } catch (error) {
+      console.error('Error loading debug settings:', error);
     }
   }
 
@@ -696,6 +723,124 @@ class FacebookFeedReader {
       console.error('Facebook Feed Reader: Error applying filters to existing items:', error);
     }
   }
+
+  async updateDebugSettings(newSettings) {
+    console.log('Facebook Feed Reader: Updating debug settings from:', this.debugSettings, 'to:', newSettings);
+    
+    this.debugSettings = { ...this.debugSettings, ...newSettings };
+    await this.saveDebugSettings();
+    
+    // Apply debug settings to UI elements
+    this.applyDebugSettings();
+  }
+
+  async saveDebugSettings() {
+    try {
+      await chrome.storage.local.set({
+        debugSettings: this.debugSettings
+      });
+    } catch (error) {
+      console.error('Error saving debug settings:', error);
+    }
+  }
+
+  applyDebugSettings() {
+    try {
+      console.log('Facebook Feed Reader: Applying debug settings...');
+      
+      // Hide/Show Shortcuts
+      if (this.debugSettings.hideShortcuts) {
+        this.hideElementByAriaLabel('Shortcuts');
+      } else {
+        this.showElementByAriaLabel('Shortcuts');
+      }
+      
+      // Hide/Show Banner
+      if (this.debugSettings.hideBanner) {
+        this.hideElementByRole('banner');
+      } else {
+        this.showElementByRole('banner');
+      }
+      
+      // Hide/Show Complementary
+      if (this.debugSettings.hideComplementary) {
+        this.hideElementByRole('complementary');
+      } else {
+        this.showElementByRole('complementary');
+      }
+      
+      // Hide/Show Stories
+      if (this.debugSettings.hideStories) {
+        this.hideElementByDataPagelet('Stories');
+      } else {
+        this.showElementByDataPagelet('Stories');
+      }
+      
+      // Hide/Show Create
+      if (this.debugSettings.hideCreate) {
+        this.hideElementByAriaLabel('Create a post');
+      } else {
+        this.showElementByAriaLabel('Create a post');
+      }
+      
+    } catch (error) {
+      console.error('Facebook Feed Reader: Error applying debug settings:', error);
+    }
+  }
+
+  hideElementByAriaLabel(ariaLabel) {
+    const elements = document.querySelectorAll(`[aria-label="${ariaLabel}"]`);
+    elements.forEach(element => {
+      element.style.display = 'none';
+      element.setAttribute('data-fb-reader-hidden', 'true');
+    });
+    console.log(`Facebook Feed Reader: Hidden ${elements.length} elements with aria-label="${ariaLabel}"`);
+  }
+
+  showElementByAriaLabel(ariaLabel) {
+    const elements = document.querySelectorAll(`[aria-label="${ariaLabel}"][data-fb-reader-hidden="true"]`);
+    elements.forEach(element => {
+      element.style.display = '';
+      element.removeAttribute('data-fb-reader-hidden');
+    });
+    console.log(`Facebook Feed Reader: Shown ${elements.length} elements with aria-label="${ariaLabel}"`);
+  }
+
+  hideElementByRole(role) {
+    const elements = document.querySelectorAll(`[role="${role}"]`);
+    elements.forEach(element => {
+      element.style.display = 'none';
+      element.setAttribute('data-fb-reader-hidden', 'true');
+    });
+    console.log(`Facebook Feed Reader: Hidden ${elements.length} elements with role="${role}"`);
+  }
+
+  showElementByRole(role) {
+    const elements = document.querySelectorAll(`[role="${role}"][data-fb-reader-hidden="true"]`);
+    elements.forEach(element => {
+      element.style.display = '';
+      element.removeAttribute('data-fb-reader-hidden');
+    });
+    console.log(`Facebook Feed Reader: Shown ${elements.length} elements with role="${role}"`);
+  }
+
+  hideElementByDataPagelet(dataPagelet) {
+    const elements = document.querySelectorAll(`[data-pagelet="${dataPagelet}"]`);
+    elements.forEach(element => {
+      element.style.display = 'none';
+      element.setAttribute('data-fb-reader-hidden', 'true');
+    });
+    console.log(`Facebook Feed Reader: Hidden ${elements.length} elements with data-pagelet="${dataPagelet}"`);
+  }
+
+  showElementByDataPagelet(dataPagelet) {
+    const elements = document.querySelectorAll(`[data-pagelet="${dataPagelet}"][data-fb-reader-hidden="true"]`);
+    elements.forEach(element => {
+      element.style.display = '';
+      element.removeAttribute('data-fb-reader-hidden');
+    });
+    console.log(`Facebook Feed Reader: Shown ${elements.length} elements with data-pagelet="${dataPagelet}"`);
+  }
 }
 
 // Initialize the feed reader when the page is ready
@@ -739,6 +884,9 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     sendResponse({ success: true });
   } else if (request.action === 'updateFilters' && feedReader) {
     feedReader.updateFilterSettings(request.filters);
+    sendResponse({ success: true });
+  } else if (request.action === 'updateDebugSettings' && feedReader) {
+    feedReader.updateDebugSettings(request.debugSettings);
     sendResponse({ success: true });
   } else if (request.action === 'getFilterSettings' && feedReader) {
     sendResponse({ filters: feedReader.filterSettings });

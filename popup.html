@@ -89,6 +89,54 @@
             text-align: center;
             margin-top: 15px;
         }
+        .debug-section {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-left: 4px solid #ffc107;
+        }
+        .debug-section h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .debug-section h3::after {
+            content: '▼';
+            font-size: 12px;
+            transition: transform 0.2s;
+        }
+        .debug-section.collapsed h3::after {
+            transform: rotate(-90deg);
+        }
+        .debug-options {
+            display: block;
+        }
+        .debug-section.collapsed .debug-options {
+            display: none;
+        }
+        .debug-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            padding-left: 10px;
+        }
+        .debug-option:last-child {
+            margin-bottom: 0;
+        }
+        .debug-option input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .debug-option label {
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -117,6 +165,32 @@
         </div>
         <div id="filterStatus" style="font-size: 11px; color: #666; margin-top: 8px;">
             Loading filter status...
+        </div>
+    </div>
+    
+    <div class="debug-section" id="debugSection">
+        <h3 id="debugHeader">Debug Options</h3>
+        <div class="debug-options" id="debugOptions">
+            <div class="debug-option">
+                <input type="checkbox" id="hideShortcuts">
+                <label for="hideShortcuts">Hide Shortcuts</label>
+            </div>
+            <div class="debug-option">
+                <input type="checkbox" id="hideBanner">
+                <label for="hideBanner">Hide Banner</label>
+            </div>
+            <div class="debug-option">
+                <input type="checkbox" id="hideComplementary">
+                <label for="hideComplementary">Hide Complementary</label>
+            </div>
+            <div class="debug-option">
+                <input type="checkbox" id="hideStories">
+                <label for="hideStories">Hide Stories</label>
+            </div>
+            <div class="debug-option">
+                <input type="checkbox" id="hideCreate">
+                <label for="hideCreate">Hide Create</label>
+            </div>
         </div>
     </div>
     
