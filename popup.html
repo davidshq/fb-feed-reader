@@ -35,6 +35,34 @@
             font-weight: bold;
             color: #1877f2;
         }
+        .filters {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .filters h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+            font-size: 14px;
+        }
+        .filter-option {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .filter-option:last-child {
+            margin-bottom: 0;
+        }
+        .filter-option input[type="checkbox"] {
+            margin-right: 8px;
+        }
+        .filter-option label {
+            font-size: 13px;
+            color: #333;
+            cursor: pointer;
+        }
         .button {
             background: #1877f2;
             color: white;
@@ -71,6 +99,25 @@
     <div class="stats">
         <h3>Items Checked</h3>
         <div class="count" id="checkedCount">Loading...</div>
+    </div>
+    
+    <div class="filters">
+        <h3>Show Posts From</h3>
+        <div class="filter-option">
+            <input type="checkbox" id="showIndividuals" checked>
+            <label for="showIndividuals">Individual Profiles</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="showGroups" checked>
+            <label for="showGroups">Groups & Pages</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="showSponsored" checked>
+            <label for="showSponsored">Sponsored Ads</label>
+        </div>
+        <div id="filterStatus" style="font-size: 11px; color: #666; margin-top: 8px;">
+            Loading filter status...
+        </div>
     </div>
     
     <button class="button" id="clearButton">Clear All Checked Items</button>

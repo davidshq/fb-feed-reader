@@ -10,6 +10,7 @@ Note: This is vibe coded using Cursor. 99% vibes. Expect code quality to be that
 - ✅ Click checkmarks to mark items as read and hide them
 - ✅ Persists checked items across browser sessions
 - ✅ Automatically hides previously checked items when reloading the page
+- ✅ **Filter posts by author type (individuals vs groups/pages vs sponsored ads)**
 - ✅ Works with Facebook's dynamic content loading
 - ✅ Responsive design with mobile support
 - ✅ Dark mode support
@@ -42,9 +43,16 @@ Once published, you'll be able to install directly from the Chrome Web Store.
 
 3. **Mark as read:** Click any checkmark to mark that item as read. The item will fade out and disappear
 
-4. **Persistent hiding:** When you reload the page or navigate away and back, previously checked items will remain hidden
+4. **Filter posts:** Use the extension popup to filter posts by author type:
+   - **Individual Profiles:** Posts from personal Facebook profiles
+   - **Groups & Pages:** Posts from Facebook groups, pages, and communities
+   - **Sponsored Ads:** Paid advertisements and sponsored content
 
-5. **New content:** As you scroll and new feed items load, they will automatically get checkmarks
+5. **Persistent hiding:** When you reload the page or navigate away and back, previously checked items will remain hidden
+
+6. **New content:** As you scroll and new feed items load, they will automatically get checkmarks
+
+7. **Filter persistence:** Your filter settings are saved and will be applied when you return to Facebook
 
 ## How It Works
 
@@ -83,6 +91,8 @@ fb-feed-reader/
 ### Content Script Features
 
 - **Feed Item Detection:** Uses multiple selectors to find Facebook feed items
+- **Author Detection:** Automatically detects whether posts are from individuals or groups/pages
+- **Dynamic Filtering:** Filters feed items based on user preferences in real-time
 - **Dynamic Content:** Observes DOM changes to handle new content
 - **Unique IDs:** Generates stable identifiers for feed items
 - **Visual Feedback:** Smooth animations for hiding items

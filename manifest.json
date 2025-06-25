@@ -11,6 +11,10 @@
     "https://www.facebook.com/*",
     "https://facebook.com/*"
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Facebook Feed Reader"
+  },
   "content_scripts": [
     {
       "matches": [

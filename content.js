@@ -4,6 +4,11 @@ class FacebookFeedReader {
     this.checkedItems = new Set();
     this.observer = null;
     this.isProcessing = false;
+    this.filterSettings = {
+      showIndividuals: true,
+      showGroups: true,
+      showSponsored: true
+    };
     this.init();
   }
 
@@ -11,6 +16,9 @@ class FacebookFeedReader {
     console.log('Facebook Feed Reader: Initializing...');
     // Load previously checked items from storage
     await this.loadCheckedItems();
+    
+    // Load filter settings
+    await this.loadFilterSettings();
     
     // Clean up invalid IDs
     await this.cleanupInvalidIds();
@@ -33,6 +41,28 @@ class FacebookFeedReader {
       }
     } catch (error) {
       console.error('Error loading checked items:', error);
+    }
+  }
+
+  async loadFilterSettings() {
+    try {
+      const result = await chrome.storage.local.get(['filterSettings']);
+      if (result.filterSettings) {
+        this.filterSettings = { ...this.filterSettings, ...result.filterSettings };
+        console.log('Facebook Feed Reader: Loaded filter settings:', this.filterSettings);
+      }
+    } catch (error) {
+      console.error('Error loading filter settings:', error);
+    }
+  }
+
+  async saveFilterSettings() {
+    try {
+      await chrome.storage.local.set({
+        filterSettings: this.filterSettings
+      });
+    } catch (error) {
+      console.error('Error saving filter settings:', error);
     }
   }
 
@@ -194,6 +224,44 @@ class FacebookFeedReader {
     return uniqueItems;
   }
 
+  findAllFeedItems() {
+    // Similar to findFeedItems but includes processed items for filtering
+    const selectors = [
+      '[role="article"][aria-posinset]',
+      '[data-pagelet*="FeedUnit"]',
+      '[data-testid*="post"]',
+      '[role="article"]',
+      'div[data-testid="post_container"]',
+      'div[data-testid="post_message"]',
+      '[data-testid="post_message"]',
+      'div[data-testid="post"]',
+      'div[data-testid="story"]',
+      'div[data-testid="feed_story"]',
+      'div[data-testid="feed_story_container"]',
+      'div[role="article"]',
+      'div[data-testid*="story"]',
+      'div[data-testid*="feed"]'
+    ];
+
+    let items = [];
+    selectors.forEach(selector => {
+      try {
+        const found = document.querySelectorAll(selector);
+        items = items.concat(Array.from(found));
+      } catch (e) {
+        console.log('Facebook Feed Reader: Selector failed:', selector, e);
+      }
+    });
+
+    // Remove duplicates and filter out loading items only
+    const uniqueItems = [...new Set(items)].filter(item => 
+      !this.isLoadingItem(item) // Skip loading items
+    );
+
+    console.log('Facebook Feed Reader: All feed items (including processed):', uniqueItems.length);
+    return uniqueItems;
+  }
+
   isLoadingItem(item) {
     // Check if item is in loading state
     return item.querySelector('[aria-label="Loading..."]') !== null ||
@@ -205,6 +273,13 @@ class FacebookFeedReader {
     try {
       // Mark as processed to avoid duplicate processing
       item.setAttribute('data-fb-reader-processed', 'true');
+      
+      // Check if this item should be shown based on filter settings
+      if (!this.shouldShowItem(item)) {
+        console.log('Facebook Feed Reader: Hiding item due to filter settings');
+        this.hideFeedItem(item);
+        return;
+      }
       
       // Generate a unique ID for this feed item
       const itemId = this.generateItemId(item);
@@ -288,7 +363,10 @@ class FacebookFeedReader {
       const checkmark = document.createElement('div');
       checkmark.className = 'fb-reader-checkmark';
       checkmark.innerHTML = '✓';
-      checkmark.title = 'Mark as read';
+      
+      // Add post type to tooltip for debugging
+      const author = this.detectPostAuthor(item);
+      checkmark.title = `Mark as read (${author.type}: ${author.name})`;
       
       // Position the checkmark
       this.positionCheckmark(checkmark, item);
@@ -303,7 +381,7 @@ class FacebookFeedReader {
       // Add to the feed item using a more React-friendly approach
       if (item && item.appendChild) {
         item.appendChild(checkmark);
-        console.log('Facebook Feed Reader: Checkmark added to item:', itemId);
+        console.log('Facebook Feed Reader: Adding checkmark to item:', itemId, 'Type:', author.type, 'Author:', author.name);
       }
     } catch (error) {
       console.error('Facebook Feed Reader: Error adding checkmark:', error);
@@ -367,8 +445,9 @@ class FacebookFeedReader {
 
   async refresh() {
     try {
-      // Reload checked items and reprocess all feed items
+      // Reload checked items and filter settings
       await this.loadCheckedItems();
+      await this.loadFilterSettings();
       
       // Remove all existing checkmarks
       document.querySelectorAll('.fb-reader-checkmark').forEach(checkmark => {
@@ -397,6 +476,224 @@ class FacebookFeedReader {
     }
     if (this.processTimeout) {
       clearTimeout(this.processTimeout);
+    }
+  }
+
+  detectPostAuthor(item) {
+    try {
+      // First check if this is a sponsored ad
+      if (this.isSponsoredAd(item)) {
+        return { type: 'sponsored', name: this.getSponsoredAdName(item), href: '' };
+      }
+
+      // Look for author information in various Facebook selectors
+      const authorSelectors = [
+        // Profile links (individuals)
+        'a[href*="/profile.php"]',
+        'a[href*="/people/"]',
+        'a[href*="/user/"]',
+        'a[href*="/profile/"]',
+        // Page links (groups/pages)
+        'a[href*="/pages/"]',
+        'a[href*="/groups/"]',
+        'a[href*="/community/"]',
+        // General author selectors
+        '[data-testid="post_author"]',
+        '[data-testid="story_author"]',
+        '[data-testid="feed_story_author"]',
+        // Aria labels that might indicate author
+        '[aria-label*="posted by"]',
+        '[aria-label*="shared by"]'
+      ];
+
+      for (const selector of authorSelectors) {
+        const authorElement = item.querySelector(selector);
+        if (authorElement) {
+          const href = authorElement.href || '';
+          const text = authorElement.textContent || '';
+          const ariaLabel = authorElement.getAttribute('aria-label') || '';
+          
+          // Check if it's a group/page
+          if (href.includes('/pages/') || 
+              href.includes('/groups/') || 
+              href.includes('/community/') ||
+              text.toLowerCase().includes('group') ||
+              text.toLowerCase().includes('page') ||
+              ariaLabel.toLowerCase().includes('group') ||
+              ariaLabel.toLowerCase().includes('page')) {
+            return { type: 'group', name: text, href: href };
+          }
+          
+          // Check if it's an individual profile
+          if (href.includes('/profile.php') || 
+              href.includes('/people/') || 
+              href.includes('/user/') ||
+              href.includes('/profile/')) {
+            return { type: 'individual', name: text, href: href };
+          }
+        }
+      }
+
+      // Fallback: try to detect based on URL patterns in the entire item
+      const allLinks = item.querySelectorAll('a[href]');
+      for (const link of allLinks) {
+        const href = link.href;
+        if (href.includes('/pages/') || href.includes('/groups/') || href.includes('/community/')) {
+          return { type: 'group', name: link.textContent, href: href };
+        }
+        if (href.includes('/profile.php') || href.includes('/people/') || href.includes('/user/')) {
+          return { type: 'individual', name: link.textContent, href: href };
+        }
+      }
+
+      // Default to individual if we can't determine
+      return { type: 'individual', name: 'Unknown', href: '' };
+    } catch (error) {
+      console.error('Error detecting post author:', error);
+      return { type: 'individual', name: 'Unknown', href: '' };
+    }
+  }
+
+  isSponsoredAd(item) {
+    try {
+      // Check for sponsored indicators
+      const sponsoredSelectors = [
+        'a[aria-label="Sponsored"]',
+        'span:contains("Sponsored")',
+        '[data-ad-rendering-role]',
+        '.sponsored_ad',
+        '[data-ft*="sponsored_ad"]',
+        'div[class*="sponsored"]'
+      ];
+
+      // Check if any sponsored indicators exist
+      for (const selector of sponsoredSelectors) {
+        if (item.querySelector(selector)) {
+          return true;
+        }
+      }
+
+      // Check for sponsored text content
+      const sponsoredText = item.textContent || '';
+      if (sponsoredText.toLowerCase().includes('sponsored')) {
+        return true;
+      }
+
+      // Check for data attributes that indicate sponsored content
+      const dataFt = item.getAttribute('data-ft');
+      if (dataFt && dataFt.includes('sponsored_ad')) {
+        return true;
+      }
+
+      // Check for sponsored class names
+      const className = item.className || '';
+      if (className.toLowerCase().includes('sponsored')) {
+        return true;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error checking if sponsored ad:', error);
+      return false;
+    }
+  }
+
+  getSponsoredAdName(item) {
+    try {
+      // Try to find the advertiser name in sponsored ads
+      const nameSelectors = [
+        '[data-ad-rendering-role="profile_name"]',
+        'h4 a[href]',
+        'a[href*="profile.php"]',
+        'a[href*="pages/"]',
+        '[data-ad-rendering-role="title"]'
+      ];
+
+      for (const selector of nameSelectors) {
+        const element = item.querySelector(selector);
+        if (element) {
+          const text = element.textContent?.trim();
+          if (text && text.length > 0) {
+            return text;
+          }
+        }
+      }
+
+      // Fallback: look for any link that might contain the advertiser name
+      const links = item.querySelectorAll('a[href]');
+      for (const link of links) {
+        const text = link.textContent?.trim();
+        if (text && text.length > 0 && text.length < 50) {
+          return text;
+        }
+      }
+
+      return 'Sponsored Ad';
+    } catch (error) {
+      console.error('Error getting sponsored ad name:', error);
+      return 'Sponsored Ad';
+    }
+  }
+
+  shouldShowItem(item) {
+    const author = this.detectPostAuthor(item);
+    
+    console.log('Facebook Feed Reader: Checking item - Type:', author.type, 'Name:', author.name);
+    
+    if (author.type === 'individual' && !this.filterSettings.showIndividuals) {
+      console.log('Facebook Feed Reader: Hiding individual post from:', author.name);
+      return false;
+    }
+    
+    if (author.type === 'group' && !this.filterSettings.showGroups) {
+      console.log('Facebook Feed Reader: Hiding group/page post from:', author.name);
+      return false;
+    }
+    
+    if (author.type === 'sponsored' && !this.filterSettings.showSponsored) {
+      console.log('Facebook Feed Reader: Hiding sponsored ad from:', author.name);
+      return false;
+    }
+    
+    console.log('Facebook Feed Reader: Showing post from:', author.name, 'Type:', author.type);
+    return true;
+  }
+
+  async updateFilterSettings(newSettings) {
+    console.log('Facebook Feed Reader: Updating filter settings from:', this.filterSettings, 'to:', newSettings);
+    
+    this.filterSettings = { ...this.filterSettings, ...newSettings };
+    await this.saveFilterSettings();
+    
+    // Apply filters to existing items without full refresh
+    await this.applyFiltersToExistingItems();
+  }
+
+  async applyFiltersToExistingItems() {
+    try {
+      console.log('Facebook Feed Reader: Applying filters to existing items...');
+      
+      // Find all feed items (including processed ones)
+      const feedItems = this.findAllFeedItems();
+      console.log('Facebook Feed Reader: Found', feedItems.length, 'items to check');
+      
+      feedItems.forEach((item) => {
+        if (!this.shouldShowItem(item)) {
+          console.log('Facebook Feed Reader: Hiding item due to filter change');
+          this.hideFeedItem(item);
+        } else {
+          // If item should be shown, make sure it's visible
+          const style = getComputedStyle(item);
+          if (style.display === 'none' && item.hasAttribute('data-fb-reader-processed')) {
+            console.log('Facebook Feed Reader: Showing previously hidden item');
+            item.style.display = '';
+            item.style.opacity = '1';
+          }
+        }
+      });
+      
+    } catch (error) {
+      console.error('Facebook Feed Reader: Error applying filters to existing items:', error);
     }
   }
 }
@@ -440,6 +737,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'refresh' && feedReader) {
     feedReader.refresh();
     sendResponse({ success: true });
+  } else if (request.action === 'updateFilters' && feedReader) {
+    feedReader.updateFilterSettings(request.filters);
+    sendResponse({ success: true });
+  } else if (request.action === 'getFilterSettings' && feedReader) {
+    sendResponse({ filters: feedReader.filterSettings });
   }
 });
 

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Facebook Feed Reader - Filtering Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-post {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .test-post.hidden {
+            display: none;
+        }
+        .author-link {
+            color: #1877f2;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .controls {
+            background: #f0f2f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .filter-option {
+            margin: 10px 0;
+        }
+        .filter-option label {
+            margin-left: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Facebook Feed Reader - Filtering Test</h1>
+    
+    <div class="controls">
+        <h3>Filter Settings</h3>
+        <div class="filter-option">
+            <input type="checkbox" id="showIndividuals" checked>
+            <label for="showIndividuals">Show Individual Profiles</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="showGroups" checked>
+            <label for="showGroups">Show Groups & Pages</label>
+        </div>
+        <div class="filter-option">
+            <input type="checkbox" id="showSponsored" checked>
+            <label for="showSponsored">Show Sponsored Ads</label>
+        </div>
+        <button onclick="applyFilters()">Apply Filters</button>
+    </div>
+
+    <div id="feed">
+        <!-- Individual Profile Post -->
+        <div class="test-post" role="article" aria-posinset="1">
+            <a href="/profile.php?id=123" class="author-link">John Doe</a>
+            <p>This is a post from an individual profile.</p>
+        </div>
+
+        <!-- Group Post -->
+        <div class="test-post" role="article" aria-posinset="2">
+            <a href="/groups/456" class="author-link">Tech Enthusiasts Group</a>
+            <p>This is a post from a Facebook group.</p>
+        </div>
+
+        <!-- Page Post -->
+        <div class="test-post" role="article" aria-posinset="3">
+            <a href="/pages/789" class="author-link">News Channel</a>
+            <p>This is a post from a Facebook page.</p>
+        </div>
+
+        <!-- Sponsored Ad -->
+        <div class="test-post sponsored_ad" role="article" aria-posinset="4" data-ft='{"ei":"sponsored_ad"}'>
+            <a href="/profile.php?id=999" class="author-link">Flohana.app</a>
+            <span>Sponsored</span>
+            <p>This is a sponsored advertisement.</p>
+        </div>
+
+        <!-- Another Individual -->
+        <div class="test-post" role="article" aria-posinset="5">
+            <a href="/people/jane-smith" class="author-link">Jane Smith</a>
+            <p>Another post from an individual profile.</p>
+        </div>
+
+        <!-- Community Post -->
+        <div class="test-post" role="article" aria-posinset="6">
+            <a href="/community/101" class="author-link">Local Community</a>
+            <p>This is a post from a community page.</p>
+        </div>
+    </div>
+
+    <script>
+        // Mock the filtering logic for testing
+        function detectPostAuthor(item) {
+            // Check if it's a sponsored ad first
+            if (isSponsoredAd(item)) {
+                return { type: 'sponsored', name: getSponsoredAdName(item), href: '' };
+            }
+            
+            const authorLink = item.querySelector('a[href]');
+            if (!authorLink) return { type: 'individual', name: 'Unknown', href: '' };
+            
+            const href = authorLink.href;
+            const text = authorLink.textContent;
+            
+            if (href.includes('/groups/') || href.includes('/pages/') || href.includes('/community/')) {
+                return { type: 'group', name: text, href: href };
+            }
+            
+            return { type: 'individual', name: text, href: href };
+        }
+
+        function isSponsoredAd(item) {
+            // Check for sponsored indicators
+            if (item.classList.contains('sponsored_ad')) return true;
+            if (item.querySelector('span:contains("Sponsored")')) return true;
+            if (item.getAttribute('data-ft') && item.getAttribute('data-ft').includes('sponsored_ad')) return true;
+            return false;
+        }
+
+        function getSponsoredAdName(item) {
+            const authorLink = item.querySelector('a[href]');
+            return authorLink ? authorLink.textContent : 'Sponsored Ad';
+        }
+
+        function shouldShowItem(item, filterSettings) {
+            const author = detectPostAuthor(item);
+            
+            if (author.type === 'individual' && !filterSettings.showIndividuals) {
+                return false;
+            }
+            
+            if (author.type === 'group' && !filterSettings.showGroups) {
+                return false;
+            }
+            
+            if (author.type === 'sponsored' && !filterSettings.showSponsored) {
+                return false;
+            }
+            
+            return true;
+        }
+
+        function applyFilters() {
+            const filterSettings = {
+                showIndividuals: document.getElementById('showIndividuals').checked,
+                showGroups: document.getElementById('showGroups').checked,
+                showSponsored: document.getElementById('showSponsored').checked
+            };
+            
+            const posts = document.querySelectorAll('.test-post');
+            
+            posts.forEach(post => {
+                if (shouldShowItem(post, filterSettings)) {
+                    post.classList.remove('hidden');
+                } else {
+                    post.classList.add('hidden');
+                }
+            });
+            
+            console.log('Filters applied:', filterSettings);
+        }
+
+        // Apply initial filters
+        applyFilters();
+    </script>
+</body>
+</html> 
